@@ -20,11 +20,11 @@ For any graph generated using the above method, all the nodes will first be conn
 
 As mentioned above, our environment consists of three entities - the predator, the prey and the agent. The agent pursues the prey while being pursued by the predator. They all can move along the edges connecting the nodes. If the agent and the prey occupy the same node at any point of time, the agent wins as it has caught the prey. Whereas if the predator and the agent occupy the same node at any point of time, the agent loses as it has been caught by the predator. There is no issue if the predator and the agent occupy the same node. The three entities move in rounds. The agent makes the first move, followed by the prey and then the predator at last. The three players follow the following rules:
 
-*The Prey:* When its the prey’s turn to make a move, it will select any one of its current neighbors or its current cell, uniformly at random. So if at any point, the prey has 3 neighbors. The probability of the prey picking any 1 of them is 1⁄4 and the probability of not leaving its current node is also 1⁄4. The prey will continue this regardless of the motions of the other two players, until the game concludes.
+**The Prey:** When its the prey’s turn to make a move, it will select any one of its current neighbors or its current cell, uniformly at random. So if at any point, the prey has 3 neighbors. The probability of the prey picking any 1 of them is 1⁄4 and the probability of not leaving its current node is also 1⁄4. The prey will continue this regardless of the motions of the other two players, until the game concludes.
 
-*The Predator:* When its the predator’s turn to make a move, it will look to move closer to the agent. So it will take a look at each of its neighboring nodes and calculate the distance of each node to the node occupied by the agent at that moment. The predator shall then pick the node with the shortest distance to the agent and then move to that node. In case multiple neighboring nodes have the same shortest distance to the agent, it will select uniformly at random. This behavior of the predator is applicable only to agents 1, 2, 3, and 4. However, for agents 5 and up, the predator acts as a distracted predator. In this, the predator either moves following the shortest path to the agent with a probability of 60%, or it randomly moves to any of its neighbors with a. probability of 40%. This setting is called the distracted predator as is applicable to agents 5, 6, 7, 8, 7_b, 8_b.
+**The Predator:** When its the predator’s turn to make a move, it will look to move closer to the agent. So it will take a look at each of its neighboring nodes and calculate the distance of each node to the node occupied by the agent at that moment. The predator shall then pick the node with the shortest distance to the agent and then move to that node. In case multiple neighboring nodes have the same shortest distance to the agent, it will select uniformly at random. This behavior of the predator is applicable only to agents 1, 2, 3, and 4. However, for agents 5 and up, the predator acts as a distracted predator. In this, the predator either moves following the shortest path to the agent with a probability of 60%, or it randomly moves to any of its neighbors with a. probability of 40%. This setting is called the distracted predator as is applicable to agents 5, 6, 7, 8, 7_b, 8_b.
 
-*The Agent:* The agent will make its move based on the specific strategy it is following. The agents are implemented in 4 different types of information settings. In the first type, the agent knows the exact location of the predator and the prey at every move. In the second one, the agent will know the location of the predator at each move, but it may not know the location of the prey. In the third information setting, the agent will have information on the location of the prey, but it may not know the exact location of the predator. The final setting is the combination of the previous two settings. The agent does not necessarily know the exact location of both the predator and the prey. In each setting, we have developed different strategies to achieve our aim.
+**The Agent:** The agent will make its move based on the specific strategy it is following. The agents are implemented in 4 different types of information settings. In the first type, the agent knows the exact location of the predator and the prey at every move. In the second one, the agent will know the location of the predator at each move, but it may not know the location of the prey. In the third information setting, the agent will have information on the location of the prey, but it may not know the exact location of the predator. The final setting is the combination of the previous two settings. The agent does not necessarily know the exact location of both the predator and the prey. In each setting, we have developed different strategies to achieve our aim.
 
 In the code, each agent has its own class. All the agent’s classes except agents 1 and 2 have the below two methods:
 
@@ -203,3 +203,381 @@ To calculate the pre-survey and post-survey probabilities, the agent 4 calls the
 Looking at Fig. 7, we can see that the agent 4 start with a survival probability of around 73% for 50 iterations. As per Fig. 8, win count for agent 4 is 2196 games, lose count is 397 at max step-count 50. However, the agent 3’s game also disbands/hangs a total of 407 times, which is greater than it’s lose count! So, we keep on increasing the step count limit until all the games get completed within the given limit. We find that for a 300 step count limit the agent 4 is able to complete all the 3000 games without any hang. So, just to take the actual survivability of the agent, we consider the survivability of the agent 4 at step count 300, which is 83.87%, which is better than Agent 3! Agent 4’s win count in 3000 games for this max step count is 2516, lose count is 484, and hang count is 0.
 
 We also calculate the percentage of times the agent 4 knows the prey’s actual location. It came out to be 0.996665555% only! We believe the reason why this value is so low is provided in the analysis given for this value for agent 3 (at the end-side of agent 3’s section)
+
+# The Partial Predator Information Setting
+
+In this type of setting, the agent knows the exact location of the prey at every move but does not know the location of the predator after the first move. The agent initially knows the location of the predator. At every move, the agent picks a node at to check whether or not the predator is located at that node. The agent gains additional information about the location of the predator every time it enters a node and the predator isn’t there. Just like the previous setting, the agent needs to keep track of a belief state for where the predator is, a collection of probabilities for each node that the predator is there. Every time the agent makes a move, it learns something new about the predator, and hence the probabilities must be updated at each step. The probabilities are also updated every time the predator is known to make a move. The agent starts by knowing the location of the predator in this environment.
+
+# Agent 5
+
+## Implementation:
+
+The Agent 5 does now know the location of the predator, so it computes the probability of all the nodes for that node containing the predator by calling the update_pred_prob_presurvey() function of the agents_common class, however it does know the exact location of the prey throughout the game. The agent then survey’s that node with maximum probability of containing the predator (breaking ties at random). If the predator is present in that location, it updates the probability of that node containing the predator to 1, and probability of all other nodes to 0, and then proceeds by calling the decide_node() function to decide the next best node to move based on the prey’s location and the chosen predator location. If the agent could not find the predator in the survey node, it then sets the predator probability of the survey node to zero and re-calculates the probability of all the other nodes by calling the update_pred_prob_postsurvey() function of the agents_common class based on the result of the survey action and the previous predator probability distribution. After this, the agent selects the node with the maximum probability of containing the predator and calls the decide_node() to move to the next node by following the rules mentioned in the overview section of The Complete information setting.
+
+The predator’s probability distribution for agent 5 is calculated in the following manner:
+
+Probability calculation before survey:
+For the first move of the game, we know the exact location of the predator. So, assign a probability of 1 to the node containing the predator. Set probabilities of all the other nodes to 0.
+
+For all other steps, the update_pred_prob_presurvey() function uses the below formula to calculate the predator probability before survey:
+
+P(x) = ∑((P(was in i) . P(random_way | was in i) . P(in x | was in i, random_way) + P(was in i) . P(shortest_way | was in i) . P(in x | was in i,shortest_way)) for i and x in 0..49
+
+Where, x is the node whose probability if getting calculated that is taken from the outer loop inside the function
+
+i is all the nodes nodes that are taken one-by-on in the internal loop
+
+P(was in i) is the predator probabilities that are already present in the probability distribution dictionary 
+
+P(random_way | was in i) = 0.4 and P(shortest_way | was in i) = 0.6
+
+P(in x | was in i, random_way) = 1/(no. of neighboring nodes of i) [1/3 at max and 1/2 at min] 
+
+P(in x | was in i, shortest_way) = 1/(no. of neighboring nodes of i) [1/3 at max and 1/2 at min]
+
+Based on the above, the agents picks a node with the maximum probability in the agent’s proceed() function and considers that node to contain the predator and to to survey. If there are multiple nodes that have the same max probability, then it chooses any node from those nodes in a random manner for survey.
+After survey, the agent again updates the probability distribution by calling the update_pred_prob_postsurvey() function of the agents_common class. The update_pred_prob_postsurvey() function calculates the predator probability by using the below logic, using the present probability distribution and the survey result.
+
+If survey returns True, that is, the predator is present at the surveyed node: 
+
+P(survey_node) = 1
+
+P(i) = 0 for i in 0..49 and i != survey_node
+
+If the survey returns False, that is, the predator is not present in the node that was surveyed, then the probability distribution is updated using the below formula:
+
+P(survey_node) = 0
+
+P(x) = P(x) . P(not in survey_node | in x) / (∑P(i) . P(not in survery_node | in i)) for i and x in 0..49
+
+Where, P(not in survey_node | in x) for survey node is set to 0, for all others, it is 1 P(not in survery_node | in i) for survey node is set to 0, for all others, it is 1
+
+P(i) and P(x) are the probability values that were previously calculated by calling the update_pred_prob_presurvey() function.
+
+Based on the above action, the agent then picks the node with the maximum probability value, generates the list containing distance from the current and neighboring nodes to the predator and chosen prey node and calls the decide_node () function to pick the next node and proceed.
+
+The survey_node() function of Agent 5 class checks whether the predator is present in the survey node or not.
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/b5d7c87d-aba7-47d5-9c10-d97d0aed0768)
+
+Looking at Fig. 9, we can see that the agent 5 start with a survival probability of around 73.7% for 50 iterations. As per Fig. 10, win count for agent 5 is 2526 games, lose count is 374 at max step-count 50. However, the agent 5’s game also disbands/hangs a total of 100 times. So, we keep on increasing the step count limit until all the games get completed within the given limit. We find that for around 200 step count limit the agent 5 is able to complete all the 3000 games without any hang. So, we just to take the actual survivability of the agent, we consider the survivability of the agent 5 at step count 200, which is 85.83%. Agent 5’s win count in 3000 games for this max step count is 2575, lose count is 425, and hang count is 0.
+
+We also calculate the percentage of times the agent 5 knows the predator’s actual location. It came out to be a good 73.7407327%. Taking into consideration that the predator acts in a distracted manner with a probability of 40%, this figure seems pretty good!
+
+# Agent 6
+
+## Implementation:
+
+The Agent 5 is an increment over the agent 5. The basic approach that agent 6 is very similar to the agent 5, with some modifications that increase its survivability percentage.
+
+The agent 6 follows the same approach and calls the same functions that the agent 5 to calculate the probability of the predator. However, instead of moving to the current prey position(what agent 5 does0, the agent 6 takes a similar approach as agent 4 to calculate the node that will contain the prey in the next move. The agent 6 then tries to move to that node by calling the decide_node_even() function and get the next best node to move to.
+
+However, unlike agent 4, since agent 6 always knows where the prey is, we do not need to calculate the pre-survey functions to calculate the probabilities. We can just create a list containing the prey’s current location and all it’s neighboring nodes. This nodes in this list will have all the nodes that the prey can move to in the next move. And we pick any node from this list at random.
+
+The basic structure of agent 6 for every step/move looks something as follows:
+1. Calculate the probability of the predator by calling the pre-survey probability distribution
+function update_pred_prob_presurvey()
+
+2. Survey the node with maximum probability to check for predator
+ 
+3. Update the probability distribution of the entire graph based on the survey results by calling the post-survey probability distribution function update_pred_prob_postsurvey()
+
+4. If the prey is in the node right next to the agent, go to step 6.
+ 
+5. If the prey is not right next to the agent, pick a node at random from a list containing the prey’s
+current position and all its neighbors
+
+6. Call decide_node_even() function to decide the next node to move
+ 
+7. Check if any condition to end the game is met or not
+ 
+8. The prey moves
+ 
+9. Check if any condition to end the game is met or not
+ 
+10. The predator moves by following the shortest path to the agent
+ 
+11. Check if any condition to end the game is met or not
+ 
+12. Increment the step_count and move to the next iteration
+
+To calculate the pre-survey and post-survey predator probabilities, the agent 6 calls the same functions that Agent 5 calls. So the agent 6 also uses the same formulas that are mentioned in the implemention of agent 5.
+
+The survey_node() function of Agent 6 class checks whether the predator is present in the survey node or not.
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/fda1eb70-74f8-4758-915f-9092b98e7638)
+
+Looking at Fig. 11, we can see that the agent 6 start with a survival probability of around 85.97% for 50 iterations, which is already better than the final surviavability percentage of agent 5 with 0 hangs. Now, as per Fig. 12, win count for agent 6 is 2579 games, lose count is 214 at max step-count 50. However, the agent 6’s game also disbands/hangs a total of 207 times, which is almost equal to its lose count! So, we keep on increasing the step count limit until all the games get completed within the given limit. We find that for around 200 step count limit the agent 6 is able to complete all the 3000 games without any hang. So, we just to take the actual survivability of the agent, we consider the survivability of the agent 6 at step count 200, which is 92.33%, which is also better than agent 5! Agent 6’s win count in 3000 games for this max step count is 2770, lose count is 2330, and hang count is 0.
+
+We also calculate the percentage of times the agent 6 knows the predator’s actual location. It came out to be a good 73.53097558%. Taking into consideration that the predator acts in a distracted manner with a probability of 40%, this figure seems pretty good!
+
+# The Combined Partial Information Setting
+
+This setting is the combination of the previous two partial information settings. So, in this type of setting, the agent does not necessarily know the exact locations of both the predator and the prey. In this setting, the agent needs to keep track of the belief states for both the predator and the prey, updating them based on new information collected from the survey and the knowledge gained from the survey done. Just like the previous setting, the agent starts by knowing the exact location of the predator and does not know the location of the prey at any point.
+
+# Agent 7
+
+## Implementation:
+
+The agent 7 does not know the locations of the prey and the predator. It only knows the initial location of the predator, that is, the node where the predator was at before the game started. So, we need to maintain and update the belief for both the predator and the prey in for this agent. Agent 7 uses the same functions update_prey_prob_presurvey(), update_prey_prob_postsurvey() mentioned in the implementation section of Agent 3, and update_pred_prob_presurvey(), update_pred_prob_postsurvey() described in the implementation section of Agent 5. Using all these 4 functions, the agent 7 decides on the prey and predator locations and calls the decide_node() function to move to the next node.
+
+However, since in this case, there are locations of two entities that are unknown, we will have to decide whether to survey a node for the predator or the prey. So, for agent 7 and all other agents that follow, we chose this by taking a look at the probability distribution of the predator. If there is any node in the probability distribution of the predator that has a probability of greater than 0.5, then we use the survey action to try to find the probability of the prey. If no, then we use the survey function to find the probability of the predator.
+
+The basic structure of agent 7 for every step/move looks something as follows:
+
+1. Calculate the probability of the prey and the predator before survey
+ 
+2. If there exists a node in the predator probability distribution dictionary that has a value greater
+than 0.5, then we pick a node with max probability of prey(breaking ties at random) and survey
+for the prey.
+
+3. If there does NOT exists a node in the predator probability distribution dictionary that has a
+value greater than 0.5, then we pick a node with max probability of the predator (breaking ties
+at random) and survey for the predator.
+
+4. After surveying, call the update_prey_prob_postsurvey() and update_pred_prob_postsurvey()
+of the agents_common class to update the belief. Please note that even if we survey for the predator, there is a slight chance that we can find not just the predator, but the prey at that location too; and the same goes for the predator. So, even if we survey for one entity, the belief of the second entity gets affected as well.
+
+5. Pick the node with the maximum probability from the predator and prey belief
+ 
+6. Calculate the distances from the current and neighboring nodes to the chosen prey and predator
+positions and call the decide_node() function to choose and move to the next node
+
+7. Check if any condition to end the game is met or not
+ 
+8. The prey moves
+ 
+9. Check if any condition to end the game is met or not
+ 
+10. The predator moves by following the shortest path to the agent
+ 
+11. Check if any condition to end the game is met or not
+ 
+12. Increment the step_count and move to the next iteration
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/f82defb3-a971-4328-8732-ddbf099eb8c1)
+
+Looking at Fig. 13, we can see that the agent 7 start with a survival probability of just around 64.2% for 50 iterations. Now, as per Fig. 14, win count for agent 7 is 1926 games, lose count is 801 at max step- count 50. However, the agent 7’s game also disbands/hangs a total of 273 times. So, we keep on increasing the step count limit until all the games get completed within the given limit. We find that for around 200 step count limit the agent 7 is able to complete all the 3000 games without any hang. So, we just to take the actual survivability of the agent, we consider the survivability of the agent 7 at step count 200, which is 69.73%. Agent 7’s win count in 3000 games for this max step count of 200 is 2092, lose count is 908, and hang count is 0.
+
+We also calculate the percentage of times the agent 7 knows the predator’s actual location. It came out to be a 29.38643723%. Now, we only ever ssurvey a node for the predator if we’re not atleast 50% sure where the predator is. So, we intentionally do not check for the predator for a few number of steps due to which the value of the above percentage goes down. Considering that, the above value seems reasonable.
+
+We also calculate the percentage of times the agent 7 knows the prey’s actual location. It came out to be 2.23465433% only! We believe the reason why this value is so low is provided in the analysis given for this value for agent 3 (at the end-side of agent 3’s section)
+
+# Agent 8
+
+## Implementation:
+
+The agent 8 can be considered as in increment over agent 7 with our own logic added. The agent 8, like agent 7, does not know the locations of the prey and the predator. It only knows the initial location of the predator, that is, the node where the predator was at before the game started. So, we need to maintain and update the belief for both the predator and the prey in for this agent. Agent 8 uses the same functions update_prey_prob_presurvey(), update_prey_prob_postsurvey() mentioned in the implementation section of Agent 3, and update_pred_prob_presurvey(), update_pred_prob_postsurvey() described in the implementation section of Agent 5. Using all these 4 functions, the agent 8 decides on the prey and predator locations and calls the decide_node_even() function to move to the next node.
+
+The agent 8, too, decides whether to survey for the predator or the prey absed on the values contained in the dictionary containing the probability dictionary of the predator, just like agent 7.
+
+The agent 8 differs from the agent 7 in the following two ways:
+
+1. Agent 7 calls the decide_node() function whereas agent 8 calls the decide_node_even() function. If the agent’s distance from the predator is greater than 5 moves, then decide_node_even() internally calls the decide_node() function of the same class (agents_common). However, the decide_node_even() not just uses the agent, predator, and prey’s positions. It also calculates the predator’s next possible location by taking the shortest path between the predator and the agent. We do not take care of the distracted predator in this case as the probability of the predator taking the distracted way is less. Even while running the code through multiple test cases, we found that, not for all, but for many cases, the predator took the shortest route.
+
+2. Before calling the decide_node_even() function to decide the enxt node, the agent 8 checks the distance from it to the node that node with the chosen node that may have the prey. If that node is right next to the agent, agent 8 calls the decide_node_even() function with that node as prey’s position. If it is not adjacent to the agent’s current position, the agent choose the prey’s next possible position from its neighbouring nodes and its current node. Then the agent 8 send this value to the decide_node_even() function to move to the next node.
+
+The basic structure of agent 8 for every step/move looks something as follows:
+
+1. Calculate the probability of the prey and the predator before survey
+ 
+2. If there exists a node in the predator probability distribution dictionary that has a value greater
+than 0.5, then we pick a node with max probability of prey (breaking ties at random) and survey
+for the prey.
+
+3. If there does NOT exists a node in the predator probability distribution dictionary that has a
+value greater than 0.5, then we pick a node with max probability of the predator (breaking ties
+at random) and survey for the predator.
+
+4. After surveying, call the update_prey_prob_postsurvey() and update_pred_prob_postsurvey()
+of the agents_common class to update the belief.
+
+5. Pick the node with the maximum probability from the predator and prey belief
+ 
+6. If distance from prey’s position to agent is greater than 1, then select any node from the prey’s
+current position and its neighbors as its next position randomly as the prey moves randomly as
+its position. If not, then select the prey’s position
+
+7. Calculate the distances from the agent’s current and neighboring nodes to the chosen prey and
+predator positions and call the decide_node_even() function to choose and move to the next node
+
+8. Check if any condition to end the game is met or not
+ 
+9. The prey moves
+ 
+10. Check if any condition to end the game is met or not
+
+11. The predator moves by following the shortest path to the agent
+ 
+12. Check if any condition to end the game is met or not
+ 
+13. Increment the step_count and move to the next iteration
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/d9005f6b-8457-4a2e-9b6b-86b71a5206c0)
+
+Looking at Fig. 15, we can see that the agent 8 start with a survival probability of just around 67.13% for 50 iterations, which is pretty close to the agent 7’s survivability with 0 hangs. Now, as per Fig. 16, win count for agent 8 is 2014 games, lose count is 592 at max step-count 50. However, the agent 8’s game also disbands/hangs a total of 394 times. So, we keep on increasing the step count limit until all the games get completed within the given limit. We find that for around 200 step count limit the agent 8 is able to complete all the 3000 games without any hang. So, we just to take the actual survivability of the agent, we consider the survivability of the agent 8 at step count 200, which is 76.93%, which is better than agent 7’s survivability! Agent 8’s win count in 3000 games for this max step count of 200 is 2308, lose count is 692, and hang count is 0.
+
+We also calculate the percentage of times the agent 8 knows the predator’s actual location. It came out to be a 28.36298578%. Now, we only ever survey a node for the predator if we’re not at least 50% sure where the predator is. So, we intentionally do not check for the predator for a few number of steps due to which the value of the above percentage goes down. Considering that, the above value seems reasonable.
+
+We also calculate the percentage of times the agent 8 knows the prey’s actual location. It came out to be 0.338773984% only! We believe the reason why this value is so low is provided in the analysis given for this value for agent 3 (at the end-side of agent 3’s section)
+
+# The Combined Partial Information Setting with Faulty survey drone
+
+This section is the same as that of the combined partial information setting with an added condition. The survey drone in this case is a faulty one. That is, even if they survey node contains the prey, the predator, or both of them in that node, then too, the survey functions returns a False value with a. probability of 0.1 (10%), that is, there is a case of False negative by 10%. For the rest of the 90%, it returns the correct result stating whether the pre, predator, or both of them occupy that node or not. There is no case of False positive, that is, there cannot be a case in which the survey node is empty, but the survey returns that some entity is occupying that node.
+
+Agent 7 and Agent 8’s performance in the combined partial information setting with faulty survey drone is as follows:
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/efb33f4b-03de-4a1c-9d59-45a6900f0e39)
+
+Looking at Fig. 17, we can see that the agent 7 in the faulty survey drone environment start with a survival probability of just 60.06% for 50 iterations, which is pretty low. Now, as per Fig. 18, win count for agent 7 in the faulty sirvey drone environment is 1818 games, lose count is 973 at max step-count 50. However, the agent 7’s game also disbands/hangs a total of 209 times. We find that for around 200 step count limit the agent 7 is able to complete all the 3000 games without any hang. So, we just to take the actual survivability of the agent, we consider the survivability of the agent 7 at step count 200 in the faulty drone environment, which is 65.06%! Agent 7’s win count in 3000 games for this max step count of 200 in this environment is 1952, lose count is 1048, and hang count is 0.
+
+We also calculate the percentage of times the agent 7 in this environment knows the predator’s actual location. It came out to be a 26.67696698%. Now, we only ever survey a node for the predator if we’re not at least 50% sure where the predator is. So, we intentionally do not check for the predator for a few number of steps due to which the value of the above percentage goes down. Considering that, the above value seems reasonable.
+
+We also calculate the percentage of times the agent 7 in this environment knows the prey’s actual location. It came out to be 1.896981823% only! We believe the reason why this value is so low is provided in the analysis given for this value for agent 3 (at the end-side of agent 3’s section)
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/45dbfd14-c2d2-44a4-b6ac-106b110e34a3)
+
+Looking at the above Fig. 19, we can see that the agent 8 in this faulty survey drone environment starts with a survival probability of just 62.8% for 50 iterations, which is pretty low but still better compared to agent 7 in the same environment. Now, as per Fig. 20, win count for agent 8 in the faulty survey drone environment is 1884 games, lose count is 801 at max step-count 50. We find that for around 200 step count limit the agent 8 is able to complete all the 3000 games without any hang. So, we consider the survivability of the agent 8 at step count 200 in the faulty drone environment, which is 71.23%! It has increased by almost 10% when compared to the result of step-count limit of 50 in the same environment.
+
+Agent 8’s win count in 3000 games for this max step count of 200 in this environment is 2137, lose count is 863, and hang count is 0.
+
+We also calculate the percentage of times the agent 7 in this environment knows the predator’s actual location. It came out to be a 26.00198522%. Now, we only ever survey a node for the predator if we’re not at least 50% sure where the predator is. So, we intentionally do not check for the predator for a few number of steps due to which the value of the above percentage goes down. Considering that, the above value seems reasonable.
+
+We also calculate the percentage of times the agent 7 in this environment knows the prey’s actual location. It came out to be 0.258043562% only! We believe the reason why this value is so low is provided in the analysis given for this value for agent 3 (at the end-side of agent 3’s section)
+
+# Agent 7_b
+
+## Implementation:
+
+The agent 7_b is the same as agent 7, but it has been modified to take case of the faulty drone. It can be considered as an increment over agent 7. Most of the approach that agent 7 takes is the same as that of agent 7, however two new functions in the class agents_common have been created to updated the belief for the faulty survey case.
+
+The below functions are called after a survey returns 0 indicating that the survey node does not contain anything. If the survey returns any other value that indicates that prey, predator, or both of them are present in the survey node, then the agent 7_b calls update_prey_prob_postsurvey() (explained in implementation section of agent 3) and update_pred_prob_postsurvey() (explained in implementation section of agent 5) that were called by the agent 7. Please find information of the two new functions below:
+
+update_prey_prob_postsurvey_fn():
+
+Since this function is called only in case the survey drone returns a False value, so we do not need to check if the survey returns True or not
+
+The function uses the below formula to calculate and update the belief of prey after the survey: 
+
+P(survey_node) = 0
+
+P(x) = P(x) . P(not in survey_node | in x) / (∑P(i) . P(not in survey_node | in i)) for i in 0...49 for i and x in 0..49
+
+Where, P(not in survey_node | in x) for survey node is 1/10, for all others, it is 1
+
+P(not in survery_node | in i) for survey node is set to 1/10, for all others, it is 1
+
+P(i) and P(x) are the probability values of that node containing the prey that were previously calculated by calling the update_prey_prob_presurvey() function.
+
+update_pred_prob_postsurvey_fn():
+
+Since this function is called only in case the survey drone returns a False value, so we do not need to check if the survey returns True or not
+
+The function uses the below formula to calculate and update the belief of predator after the survey: 
+
+P(survey_node) = 0
+
+P(x) = P(x) . P(not in survey_node | in x) / (∑P(i) . P(not in survey_node | in i)) for i in 0...49
+for i and x in 0..49
+
+Where, P(not in survey_node | in x) for survey node is 1/10, for all others, it is 1
+
+P(not in survery_node | in i) for survey node is set to 1/10, for all others, it is 1
+
+P(i) and P(x) are the probability values of that node containing the predator that were previously calculated by calling the update_prey_prob_presurvey() function.
+
+The survey_node() function of Agent 4 class checks whether the prey is present in the survey node or not with always returning a 0(not containing anything) with a 10% probability.
+
+The basic structure of agent 7_b for every step/move looks something as follows:
+
+1. Calculate the probability of the prey and the predator before survey
+
+2. If there exists a node in the predator probability distribution dictionary that has a value
+greater than 0.5, then we pick a node with max probability of prey (breaking ties at random)
+and survey for the prey.
+
+3. If there does NOT exist a node in the predator probability distribution dictionary that has a value greater than 0.5, then we pick a node with max probability of the predator (breaking ties at random) and survey for the predator.
+
+4. If survey returns 0, update prey and predator belied by calling update_prey_prob_postsurvey_fn() and update_pred_prob_postsurvey_fn()
+ 
+5. If survey returns any value other than 0, update prey and predator belied by calling update_prey_prob_postsurvey() and update_pred_prob_postsurvey()
+ 
+6. Pick the node with the maximum probability from the predator and prey belief
+ 
+7. Calculate the distances from the current and neighboring nodes to the chosen prey and predator positions and call the decide_node() function to choose and move to the next node
+
+8. Check if any condition to end the game is met or not
+ 
+9. The prey moves
+ 
+10. Check if any condition to end the game is met or not
+ 
+11. The predator moves by following the shortest path to the agent
+ 
+12. Check if any condition to end the game is met or not
+ 
+13. Increment the step_count and move to the next iteration
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/92a5198c-aeb2-4685-b10d-b6ac0cc7cf49)
+
+Looking at the above Fig. 21, we can see that the agent 7_b in this faulty survey drone environment starts with a survival probability of 62.27% for 50 iterations, which is better than that of agent 7 in the same environment. Now, as per Fig. 22, win count for agent 7_b in the faulty survey drone environment is 1838 games, lose count is 880 at max step-count 50. We find that for around 200 step count limit the agent 7_b is able to complete all the 3000 games without any hang. So, we consider the survivability of the agent 7_b at step count 200 in the faulty drone environment, which is 68.6%. It has increased by almost 6.5% when compared to the result of step-count limit of 50 in the same environment. Agent 7_b’s win count in 3000 games for this max step count of 200 in this environment is 2058, lose count is 942, and hang count is 0.
+
+We also calculate the percentage of times the agent 7_b in this environment knows the predator’s actual location. It came out to be a 27.3677756%. Now, we only ever survey a node for the predator if we’re not at least 50% sure where the predator is. So, we intentionally do not check for the predator for a few number of steps due to which the value of the above percentage goes down. Considering that, the above value seems reasonable.
+
+We also calculate the percentage of times the agent 7_b in this environment knows the prey’s actual location. It came out to be 2.116647005% only! We believe the reason why this value is so low is provided in the analysis given for this value for agent 3 (at the end-side of agent 3’s section)
+
+# Agent 8_b
+
+## Implementation:
+
+The agent 8_b can be considered as an increment over the agent 7_b. Most of the approach followed by the agent 7_b is also followed by the agent 8_b. Please read the implementation section of agent 7_b to understand how agent 7 and agent 7_b differ. The agent 8_b differs form the agent 8 in the same manner. Moreover, then changes that were present in the agent 8 that were not there in agent 7, those changes are also included in the agent 8_b. So, the agent 8_b is created by taking 7_b and adding the changes that were present in agent 8 when compared to agent 7.
+
+The basic structure of agent 8 for every step/move looks something as follows:
+
+1. Calculate the probability of the prey and the predator before survey
+ 
+2. If there exists a node in the predator probability distribution dictionary that has a value greater than 0.5, then we pick a node with max probability of prey (breaking ties at random) and survey for the prey.
+ 
+3. If there does NOT exists a node in the predator probability distribution dictionary that has a value greater than 0.5, then we pick a node with max probability of the predator (breaking ties at random) and survey for the predator.
+ 
+4. If survey returns 0, update prey and predator belied by calling update_prey_prob_postsurvey_fn() and update_pred_prob_postsurvey_fn()
+ 
+5. If survey returns any value other than 0, update prey and predator belied by calling update_prey_prob_postsurvey() and update_pred_prob_postsurvey()
+ 
+6. Pick the node with the maximum probability from the predator and prey belief
+ 
+7. If distance from prey’s position to agent is greater than 1, then select any node from the prey’s current position and its neighbors as its next position randomly as the prey moves randomly as its position. If not, then select the prey’s position
+ 
+8. Calculate the distances from the agent’s current and neighboring nodes to the chosen prey and predator positions and call the decide_node_even() function to choose and move to the next node
+ 
+9. Check if any condition to end the game is met or not
+ 
+10. The prey moves
+ 
+11. Check if any condition to end the game is met or not
+ 
+12. The predator moves by following the shortest path to the agent
+ 
+13. Check if any condition to end the game is met or not
+ 
+14. Increment the step_count and move to the next iteration
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/522a758f-84de-40d5-8d49-f4db0e048166)
+
+Looking at the above Fig. 23, we can see that the agent 8_b in this faulty survey drone environment starts with a survival probability of 62.37% for 50 iterations, which is better than that of agent 7_b by a marginal amount in the same environment. Now, as per Fig. 24, win count for agent 8_b in the faulty survey drone environment is 1961 games, lose count is 681 at max step-count 50. We find that for around 200 step count limit the agent 8_b is able to complete all the 3000 games without any hang. So, we consider the survivability of the agent 8_b at step count 200 in the faulty drone environment, which is 71.46%, which is better than agent 7_b’s survivability! Agent 8_b’s survivability has also increased by almost 9% when compared to its own result of step-count limit of 50 in the same environment. Agent 8_b’s win count in 3000 games for this max step count of 200 in this environment is 2144, lose count is 856, and hang count is 0.
+
+We also calculate the percentage of times the agent 8_b in this environment knows the predator’s actual location. It came out to be a 26.00198522%. Now, we only ever survey a node for the predator if we’re not at least 50% sure where the predator is. So, we intentionally do not check for the predator for a few number of steps due to which the value of the above percentage goes down. Considering that, the above value seems reasonable.
+
+We also calculate the percentage of times the agent 8_b in this environment knows the prey’s actual location. It came out to be 0.258043562% only! We believe the reason why this value is so low is provided in the analysis given for this value for agent 3 (at the end-side of agent 3’s section)
+
+# Comparison of survivability of all the agents
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/95171b79-1ea7-4638-a11a-2011ab8a2709)
+
+# Comparison of win, lose, hang/disband count of all the agents
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/1108cc6d-2028-43b2-adea-b7b43ee0c036)
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/d55ed168-7e2e-4963-bb48-526ed6ee65b6)
+
+![New Note](https://github.com/pandaabhishek38/Circle-of-life/assets/56110423/d44e3452-7be4-47db-886e-d678495a0b10)
